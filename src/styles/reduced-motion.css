@@ -1,0 +1,24 @@
+/* Soporte para prefers-reduced-motion - WCAG 2.3.3 */
+@media (prefers-reduced-motion: reduce) {
+  /* Desactivar todas las animaciones */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Desactivar animaciones específicas de framer-motion */
+  [data-framer-motion] {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* Desactivar parallax y otros efectos de movimiento */
+  .parallax,
+  .scroll-smooth {
+    scroll-behavior: auto !important;
+  }
+}

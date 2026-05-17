@@ -1,0 +1,126 @@
+@import "tailwindcss";
+
+:root {
+  --background: #020617; /* Slate 950 */
+  --foreground: #f8fafc; /* Slate 50 */
+  --card-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  --glow-indigo: 0 0 20px -5px rgba(79, 70, 229, 0.5); /* glow sutil index */
+}
+
+/* Forzar modo oscuro en toda la app por solicitud de diseño */
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: 
+    radial-gradient(ellipse at top right, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at bottom left, rgba(79, 70, 229, 0.05) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism & Effects Dark */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6); /* Slate 900 con opacidad */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.premium-card {
+  background: rgba(15, 23, 42, 0.8); /* Slate 900 semi-translúcido */
+  border: 1px solid rgba(255, 255, 255, 0.05); /* Borde sutil */
+  box-shadow: var(--card-shadow);
+  border-radius: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+/* Brillo superior en tarjetas (Stripe pattern) */
+.premium-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  pointer-events: none;
+}
+
+.premium-card:hover {
+  box-shadow: var(--card-shadow-hover), var(--glow-indigo);
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.3); /* Border índigo sutil en hover */
+}
+
+/* Accessibility: Respect Reduced Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-delay: -1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    background-attachment: initial !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}
+
+/* Custom Animations */
+@keyframes slideInUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slideInUp {
+  animation: slideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* UI Cleanup Dark */
+select option {
+  background: #0f172a !important; /* Slate 900 */
+  color: #f1f5f9 !important;
+}
+
+input, select, textarea {
+  color: #f8fafc !important; /* Slate 50 */
+}
+
+input::placeholder, textarea::placeholder {
+  color: #475569 !important; /* Slate 600 */
+}
+
+/* Scrollbar Customization Dark */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
