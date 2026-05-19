@@ -4,6 +4,7 @@ import React from 'react';
 import { 
   MoreHorizontal, 
   User, 
+  Search,
   Building2, 
   MapPin, 
   Briefcase,
@@ -20,7 +21,8 @@ export default function EmployeeTable({
   pagination, 
   onPageChange, 
   helpers,
-  onAction 
+  onAction,
+  hasFilters = false
 }) {
   const { totalPages = 1, page: currentPage = 1 } = pagination || {};
 
@@ -38,10 +40,14 @@ export default function EmployeeTable({
     return (
       <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 p-20 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800/50 text-slate-500">
-          <User className="h-8 w-8" />
+          <Search className="h-8 w-8" />
         </div>
-        <h3 className="mt-4 text-lg font-medium text-slate-200">No se encontraron empleados</h3>
-        <p className="mt-2 text-sm text-slate-500">Intenta ajustar los filtros de búsqueda.</p>
+        <h3 className="mt-4 text-lg font-medium text-slate-200">
+          {hasFilters ? 'No se encontraron empleados' : 'Busca empleados para comenzar'}
+        </h3>
+        <p className="mt-2 text-sm text-slate-500">
+          {hasFilters ? 'Intenta ajustar los filtros de búsqueda.' : 'Configura los filtros y presiona "Buscar Empleados".'}
+        </p>
       </div>
     );
   }

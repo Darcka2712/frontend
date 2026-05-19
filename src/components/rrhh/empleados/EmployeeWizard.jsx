@@ -3,15 +3,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, 
-  ChevronRight, 
-  ChevronLeft, 
-  Check, 
-  User, 
-  Building2, 
-  FileText, 
-  CreditCard, 
+import {
+  X,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+  User,
+  Building2,
+  FileText,
+  CreditCard,
   ShieldAlert,
   Loader2,
   Calendar,
@@ -77,16 +77,16 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
   });
 
   const [errors, setErrors] = useState({});
-  
-  const selectedCategory = useMemo(() => 
+
+  const selectedCategory = useMemo(() =>
     catalogs.categorias.find(c => c.id_categoria.toString() === formData.id_categoria.toString()),
-  [catalogs.categorias, formData.id_categoria]);
+    [catalogs.categorias, formData.id_categoria]);
 
   if (!isOpen) return null;
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
+
     // Dynamic catalog updates
     if (field === 'id_empresa' && catalogs.handleEmpresaChange) {
       catalogs.handleEmpresaChange(value);
@@ -116,7 +116,7 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
       if (!formData.id_empresa) newErrors.id_empresa = 'Requerido';
       if (!formData.id_categoria) newErrors.id_categoria = 'Requerido';
       if (!formData.id_puesto) newErrors.id_puesto = 'Requerido';
-      
+
       const cat = catalogs.categorias.find(c => c.id_categoria.toString() === formData.id_categoria.toString());
       if (cat?.es_campo && !formData.id_rancho) newErrors.id_rancho = 'Requerido para campo';
       if (cat && !cat.es_campo && !formData.id_area) newErrors.id_area = 'Requerido para oficina';
@@ -132,7 +132,7 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
     if (step === 'contrato') {
       if (!formData.tipo_contrato_id) newErrors.tipo_contrato_id = 'Requerido';
       if (!formData.tipo_pago_id) newErrors.tipo_pago_id = 'Requerido';
-      
+
       const tipoPago = catalogs.tiposPago?.find(p => p.id_catalogo?.toString() === formData.tipo_pago_id?.toString());
       if (tipoPago && ['FIJO', 'MIXTO'].includes(tipoPago.codigo)) {
         if (!formData.salario_diario || formData.salario_diario <= 0) {
@@ -194,12 +194,11 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                 {idx !== STEPS.length - 1 && (
                   <div className={`absolute left-[19px] top-10 h-10 w-0.5 ${idx < currentStep ? 'bg-indigo-600' : 'bg-slate-800'}`} />
                 )}
-                
+
                 {/* Step Circle */}
-                <div className={`z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all duration-300 ${
-                  idx === currentStep ? 'bg-indigo-600 text-white scale-110 shadow-lg shadow-indigo-600/30' : 
+                <div className={`z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl transition-all duration-300 ${idx === currentStep ? 'bg-indigo-600 text-white scale-110 shadow-lg shadow-indigo-600/30' :
                   idx < currentStep ? 'bg-indigo-600/20 text-indigo-500' : 'bg-slate-800/50 text-slate-500'
-                }`}>
+                  }`}>
                   {idx < currentStep ? <Check className="h-5 w-5" /> : <step.icon className="h-5 w-5" />}
                 </div>
 
@@ -242,9 +241,9 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
               >
                 {currentStep === 0 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <InputField label="Nombre(s)" name="nombre" value={formData.nombre} onChange={(e) => handleChange('nombre', e.target.value)} error={errors.nombre} icon={User} />
-                    <InputField label="Apellido Paterno" name="apellido_paterno" value={formData.apellido_paterno} onChange={(e) => handleChange('apellido_paterno', e.target.value)} error={errors.apellido_paterno} />
-                    <InputField label="Apellido Materno" name="apellido_materno" value={formData.apellido_materno} onChange={(e) => handleChange('apellido_materno', e.target.value)} />
+                    <InputField label="Nombre(s)" name="nombre" value={formData.nombre} onChange={(e) => handleChange('nombre', e.target.value)} error={errors.nombre} icon={User} placeholder="Escribe el nombre" />
+                    <InputField label="Apellido Paterno" name="apellido_paterno" value={formData.apellido_paterno} onChange={(e) => handleChange('apellido_paterno', e.target.value)} error={errors.apellido_paterno} placeholder="Escribe el apellido paterno" />
+                    <InputField label="Apellido Materno (Opcional)" name="apellido_materno" value={formData.apellido_materno} onChange={(e) => handleChange('apellido_materno', e.target.value)} placeholder="Escribe el apellido materno" />
                     <InputField label="Fecha de Nacimiento" name="fecha_nacimiento" type="date" value={formData.fecha_nacimiento} onChange={(e) => handleChange('fecha_nacimiento', e.target.value)} error={errors.fecha_nacimiento} icon={Calendar} />
                     <div className="space-y-2 col-span-full">
                       <label className="text-xs font-bold uppercase tracking-widest text-slate-500">Género</label>
@@ -253,11 +252,10 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                           <button
                             key={g}
                             onClick={() => handleChange('genero', g)}
-                            className={`flex-1 rounded-2xl border p-4 text-sm font-semibold transition-all ${
-                              formData.genero === g 
-                                ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400 shadow-inner' 
-                                : 'border-slate-800 bg-slate-900/50 text-slate-500 hover:bg-slate-800'
-                            }`}
+                            className={`flex-1 rounded-2xl border p-4 text-sm font-semibold transition-all ${formData.genero === g
+                              ? 'border-indigo-500 bg-indigo-500/10 text-indigo-400 shadow-inner'
+                              : 'border-slate-800 bg-slate-900/50 text-slate-500 hover:bg-slate-800'
+                              }`}
                           >
                             {g === 'M' ? 'Masculino' : g === 'F' ? 'Femenino' : 'Otro'}
                           </button>
@@ -270,7 +268,7 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                 {currentStep === 1 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-full">
-                       <SelectField
+                      <SelectField
                         label="Empresa de Adscripción"
                         icon={Building2}
                         options={catalogs.empresas.map(e => ({ value: e.id_empresa, label: e.nombre_empresa }))}
@@ -283,11 +281,12 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                     <SelectField
                       label="Categoría"
                       icon={Heart}
-                      options={catalogs.categorias.map(c => ({ value: c.id_categoria, label: c.label }))}
+                      options={catalogs.categorias.map(c => ({ value: c.id_categoria, label: c.nombre_categoria }))}
                       value={formData.id_categoria}
                       onChange={(val) => handleChange('id_categoria', val)}
                       error={errors.id_categoria}
-                      placeholder="Seleccionar categoría"
+                      disabled={!formData.id_empresa}
+                      placeholder={formData.id_empresa ? "Seleccionar categoría" : "Primero seleccione empresa"}
                     />
                     <SelectField
                       label="Puesto"
@@ -296,7 +295,8 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                       value={formData.id_puesto}
                       onChange={(val) => handleChange('id_puesto', val)}
                       error={errors.id_puesto}
-                      placeholder="Seleccionar puesto"
+                      disabled={!formData.id_categoria}
+                      placeholder={formData.id_categoria ? "Seleccionar puesto" : "Primero seleccione categoría"}
                     />
                     {selectedCategory?.es_campo ? (
                       <div className="col-span-full">
@@ -307,6 +307,7 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                           value={formData.id_rancho}
                           onChange={(val) => handleChange('id_rancho', val)}
                           error={errors.id_rancho}
+                          disabled={!formData.id_categoria}
                           placeholder="Seleccionar rancho"
                         />
                       </div>
@@ -319,7 +320,8 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                           value={formData.id_area}
                           onChange={(val) => handleChange('id_area', val)}
                           error={errors.id_area}
-                          placeholder="Seleccionar área"
+                          disabled={!formData.id_categoria}
+                          placeholder={formData.id_categoria ? "Seleccionar área" : "Primero seleccione categoría"}
                         />
                       </div>
                     )}
@@ -350,34 +352,34 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                       const selectedTipoPago = catalogs.tiposPago?.find(p => p.id_catalogo?.toString() === formData.tipo_pago_id?.toString());
                       const codigo = selectedTipoPago?.codigo?.toUpperCase();
                       const showSalario = codigo === 'FIJO' || codigo === 'MIXTO';
-                      
+
                       return showSalario ? (
-                        <InputField 
-                          label="Salario Diario" 
-                          name="salario_diario" 
-                          type="number" 
-                          value={formData.salario_diario} 
-                          onChange={(e) => handleChange('salario_diario', e.target.value)} 
+                        <InputField
+                          label="Salario Diario"
+                          name="salario_diario"
+                          type="number"
+                          value={formData.salario_diario}
+                          onChange={(e) => handleChange('salario_diario', e.target.value)}
                           error={errors.salario_diario}
                           icon={DollarSign}
                           placeholder="0.00"
                         />
                       ) : null;
                     })()}
-                    <InputField 
-                      label="Fecha de Inicio" 
-                      name="fecha_inicio" 
-                      type="date" 
-                      value={formData.fecha_inicio} 
-                      onChange={(e) => handleChange('fecha_inicio', e.target.value)} 
+                    <InputField
+                      label="Fecha de Inicio"
+                      name="fecha_inicio"
+                      type="date"
+                      value={formData.fecha_inicio}
+                      onChange={(e) => handleChange('fecha_inicio', e.target.value)}
                       icon={Calendar}
                     />
-                    <InputField 
-                      label="Fecha de Fin (opcional)" 
-                      name="fecha_fin" 
-                      type="date" 
-                      value={formData.fecha_fin} 
-                      onChange={(e) => handleChange('fecha_fin', e.target.value)} 
+                    <InputField
+                      label="Fecha de Fin (opcional)"
+                      name="fecha_fin"
+                      type="date"
+                      value={formData.fecha_fin}
+                      onChange={(e) => handleChange('fecha_fin', e.target.value)}
                       icon={Calendar}
                     />
                   </div>
@@ -426,7 +428,7 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                 {currentStep === 5 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="col-span-full">
-                       <InputField label="Nombre Completo del Contacto" name="nombre_contacto" value={formData.nombre_contacto} onChange={(e) => handleChange('nombre_contacto', e.target.value)} icon={Contact} />
+                      <InputField label="Nombre Completo del Contacto" name="nombre_contacto" value={formData.nombre_contacto} onChange={(e) => handleChange('nombre_contacto', e.target.value)} icon={Contact} />
                     </div>
                     <InputField label="Relación / Parentesco" name="relacion" value={formData.relacion} onChange={(e) => handleChange('relacion', e.target.value)} placeholder="Ej. Esposa, Padre, Amigo..." />
                     <InputField label="Teléfono de Emergencia" name="telefono_contacto" value={formData.telefono_contacto} onChange={(e) => handleChange('telefono_contacto', e.target.value)} icon={Phone} />
@@ -442,11 +444,10 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
               <button
                 onClick={prevStep}
                 disabled={currentStep === 0 || loading}
-                className={`flex items-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-bold transition-all ${
-                  currentStep === 0 
-                    ? 'hidden' 
-                    : 'text-slate-400 hover:bg-white/5 hover:text-white disabled:opacity-30'
-                }`}
+                className={`flex items-center gap-2 rounded-2xl px-6 py-3.5 text-sm font-bold transition-all ${currentStep === 0
+                  ? 'hidden'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-white disabled:opacity-30'
+                  }`}
               >
                 <ChevronLeft className="h-5 w-5" /> Anterior
               </button>
@@ -459,16 +460,15 @@ export default function EmployeeWizard({ isOpen, onClose, onFinalize, catalogs, 
                 </p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-4">
               {/* Progress indicator for mobile or extra visual cue */}
               <div className="hidden sm:flex items-center gap-1.5 mr-6">
                 {STEPS.map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`h-1.5 w-1.5 rounded-full transition-all duration-500 ${
-                      i === currentStep ? 'w-6 bg-indigo-500' : 'bg-slate-700'
-                    }`} 
+                  <div
+                    key={i}
+                    className={`h-1.5 w-1.5 rounded-full transition-all duration-500 ${i === currentStep ? 'w-6 bg-indigo-500' : 'bg-slate-700'
+                      }`}
                   />
                 ))}
               </div>

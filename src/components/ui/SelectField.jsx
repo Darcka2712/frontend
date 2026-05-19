@@ -39,6 +39,7 @@ const SelectField = React.forwardRef(({
             text-white font-bold appearance-none cursor-pointer 
             focus:border-indigo-500/50 focus:bg-slate-900/60 transition-all outline-none
             ${error ? 'border-red-500/50' : ''}
+            ${props.disabled ? 'opacity-40 cursor-not-allowed bg-slate-900/20' : ''}
             ${className}
           `}
           {...props}

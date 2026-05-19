@@ -49,10 +49,10 @@ export const AuthProvider = ({ children }) => {
         type: 'INITIALIZE',
         payload: { user: JSON.parse(storedUser) }
       });
-      
+
       // Validar token en segundo plano
       try {
-        const response = await api.get('/usuario/me');
+        const response = await api.get('/usuarios/me');
         if (response.success) {
           localStorage.setItem('user:v1', JSON.stringify(response.data.user));
           dispatch({ type: 'INITIALIZE', payload: { user: response.data.user } });
@@ -78,19 +78,19 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'CLEAR_ERROR' });
     dispatch({ type: 'SET_LOGIN_LOADING', payload: true });
     try {
-      const response = await api.post('/usuario/login', {
+      const response = await api.post('/usuarios/login', {
         user: credentials.email,
         password: credentials.password
       });
 
       if (response.success) {
         const { token, user } = response.data;
-        
+
         localStorage.setItem('token', token);
         localStorage.setItem('user:v1', JSON.stringify(user));
-        
+
         dispatch({ type: 'LOGIN', payload: { user } });
-        
+
         push('/dashboard');
         return { success: true };
       }
@@ -111,7 +111,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = useCallback(async () => {
     try {
-      await api.post('/usuario/logout');
+      await api.post('/usuarios/logout');
     } catch (error) {
       // Logout endpoint may not exist on backend; clear local state anyway
     } finally {

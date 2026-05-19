@@ -33,7 +33,7 @@ const initialState = {
     id_puesto: '',
     lugar: '',
     tipo_contrato: '',
-    activo: 'true'
+    activo: 1
   },
   catalogs: {
     empresas: [],
@@ -197,10 +197,6 @@ export default function EmpleadosPage() {
     loadCatalogs();
   }, [loadCatalogs]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleFilter = () => {
     loadData(1);
   };
@@ -212,33 +208,33 @@ export default function EmpleadosPage() {
   // Catalog Handlers
   const handleEmpresaChange = useCallback(async (empresaId) => {
     if (!empresaId) {
-      const all = await getRanchos();
-      dispatch({ type: 'SET_CATALOGS', payload: { ranchos: all } });
+      dispatch({ type: 'SET_CATALOGS', payload: { categorias: [], puestosFiltrados: [], ranchos: [], areas: [] } });
       return;
     }
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/ranchos/empresa/${empresaId}/select`, {
+      const response = await fetch(`/api/categorias/empresa/${empresaId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
         const json = await response.json();
-        dispatch({ type: 'SET_CATALOGS', payload: { ranchos: json.data || [] } });
+        dispatch({ type: 'SET_CATALOGS', payload: { categorias: json.data || [], puestosFiltrados: [], ranchos: [], areas: [] } });
       }
     } catch (error) {
-      dispatch({ type: 'SET_CATALOGS', payload: { ranchos: [] } });
+      dispatch({ type: 'SET_CATALOGS', payload: { categorias: [], puestosFiltrados: [], ranchos: [], areas: [] } });
     }
-  }, [getRanchos]);
+  }, []);
 
   const handleCategoriaChange = useCallback(async (categoriaId, empresaId = null) => {
     if (!categoriaId) {
-      dispatch({ type: 'SET_CATALOGS', payload: { puestosFiltrados: puestos } });
+      dispatch({ type: 'SET_CATALOGS', payload: { puestosFiltrados: [], ranchos: [], areas: [] } });
       return;
     }
     try {
       const token = localStorage.getItem('token');
-      
-      // Obtener info de la categoría para saber si es campo u oficina
+      const rawEmpresaId = empresaId || filters?.id_empresa;
+      const targetEmpresaId = typeof rawEmpresaId === 'object' ? rawEmpresaId?.id_empresa : rawEmpresaId;
+
       const catResponse = await fetch(`/api/categorias/${categoriaId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -250,7 +246,6 @@ export default function EmpleadosPage() {
         esCampo = catData?.es_campo || catData?.es_campo === 1;
       }
 
-      // Filtrar puestos por categoría
       const puestosResponse = await fetch(`/api/puestos/categoria/${categoriaId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -259,10 +254,6 @@ export default function EmpleadosPage() {
         dispatch({ type: 'SET_CATALOGS', payload: { puestosFiltrados: puestosJson.data || [] } });
       }
 
-      // Recargar ranchos o áreas según tipo de categoría y empresa
-      const rawEmpresaId = empresaId || filters?.id_empresa;
-      const targetEmpresaId = typeof rawEmpresaId === 'object' ? rawEmpresaId?.id_empresa : rawEmpresaId;
-      
       if (targetEmpresaId) {
         if (esCampo) {
           const ranchosRes = await fetch(`/api/ranchos/empresa/${targetEmpresaId}/select`, {
@@ -270,22 +261,22 @@ export default function EmpleadosPage() {
           });
           if (ranchosRes.ok) {
             const ranchosJson = await ranchosRes.json();
-            dispatch({ type: 'SET_CATALOGS', payload: { ranchos: ranchosJson.data || [] } });
+            dispatch({ type: 'SET_CATALOGS', payload: { ranchos: ranchosJson.data || [], areas: [] } });
           }
         } else {
-          const areasRes = await fetch(`/api/areas/empresa/${targetEmpresaId}/select`, {
+          const areasRes = await fetch(`/api/areas/empresa/${targetEmpresaId}`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           if (areasRes.ok) {
             const areasJson = await areasRes.json();
-            dispatch({ type: 'SET_CATALOGS', payload: { areas: areasJson.data || [] } });
+            dispatch({ type: 'SET_CATALOGS', payload: { areas: areasJson.data || [], ranchos: [] } });
           }
         }
       }
     } catch (error) {
       console.error('Error en handleCategoriaChange:', error);
     }
-  }, [puestos, filters?.id_empresa]);
+  }, [filters?.id_empresa]);
 
   // Wizard Finalization
   const handleWizardFinalize = async (data) => {
@@ -293,6 +284,7 @@ export default function EmpleadosPage() {
       await createEmpleadoMultiTable(data);
       toast.success('Empleado dado de alta correctamente con todos sus datos');
       dispatch({ type: 'SET_UI', payload: { isWizardOpen: false } });
+      loadCatalogs();
       loadData();
     } catch (error) {
       toast.error(error.message || 'Error al crear empleado');
@@ -394,7 +386,7 @@ export default function EmpleadosPage() {
         {isWizardOpen && (
           <EmployeeWizard
             isOpen={isWizardOpen}
-            onClose={() => dispatch({ type: 'SET_UI', payload: { isWizardOpen: false } })}
+            onClose={() => { dispatch({ type: 'SET_UI', payload: { isWizardOpen: false } }); loadCatalogs(); }}
             onFinalize={handleWizardFinalize}
             catalogs={{
               ...catalogs,
