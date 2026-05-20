@@ -40,7 +40,7 @@ export default function ReportesPage() {
       const endpoints = [
         publicApiUrl('/reportes/'),
         publicApiUrl('/reportes/tipos'),
-        publicApiUrl('/usuario/'),
+        publicApiUrl('/usuarios/'),
       ];
 
       const responses = await Promise.all(

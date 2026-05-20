@@ -34,7 +34,7 @@ export function useAuth() {
             setIsLoading(true);
             setError(null);
 
-            const response = await api.post('/usuario/login', {
+            const response = await api.post('/usuarios/login', {
                 user: credentials.email,
                 password: credentials.password,
             });
@@ -68,7 +68,7 @@ export function useAuth() {
 
     const logout = async () => {
         try {
-            await api.post('/usuario/logout');
+            await api.post('/usuarios/logout');
         } catch (e) {
             console.error('Logout error on server:', e);
         } finally {
@@ -82,11 +82,11 @@ export function useAuth() {
     };
 
     // --- User Management (Expected by UsuariosPage) ---
-    const getUsuarios = (params) => wrapRequest(() => api.get('/usuario', { params }));
-    const createUsuario = (data) => wrapRequest(() => api.post('/usuario', data));
-    const updateUsuario = (id, data) => wrapRequest(() => api.put(`/usuario/${id}`, data));
-    const deleteUsuario = (id) => wrapRequest(() => api.delete(`/usuario/${id}`));
-    const changePassword = (id, data) => wrapRequest(() => api.put(`/usuario/${id}/password`, data));
+    const getUsuarios = (params) => wrapRequest(() => api.get('/usuarios', { params }));
+    const createUsuario = (data) => wrapRequest(() => api.post('/usuarios', data));
+    const updateUsuario = (id, data) => wrapRequest(() => api.put(`/usuarios/${id}`, data));
+    const deleteUsuario = (id) => wrapRequest(() => api.delete(`/usuarios/${id}`));
+    const changePassword = (id, data) => wrapRequest(() => api.put(`/usuarios/${id}/password`, data));
 
     // --- Roles ---
     const getRoles = () => wrapRequest(() => api.get('/roles/select'));
