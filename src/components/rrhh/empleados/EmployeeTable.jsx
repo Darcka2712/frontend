@@ -12,7 +12,8 @@ import {
   UserMinus,
   ExternalLink,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Edit2
 } from 'lucide-react';
 
 export default function EmployeeTable({ 
@@ -136,6 +137,13 @@ export default function EmployeeTable({
                   {/* Acciones */}
                   <td className="p-5">
                     <div className="flex items-center justify-end gap-2">
+                      <button 
+                        title="Editar empleado"
+                        onClick={() => onAction('edit', emp)}
+                        className="rounded-xl border border-slate-700 bg-slate-800/50 p-2 text-slate-400 hover:border-amber-500/50 hover:bg-amber-500/10 hover:text-amber-400 transition-all"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </button>
                       <button 
                         title="Ver detalles"
                         onClick={() => onAction('details', emp)}

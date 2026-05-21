@@ -31,6 +31,12 @@ export function useRRHH() {
     
     const darDeBajaEmpleado = useCallback((id, motivo) => wrapRequest(() => api.post(`/empleados/${id}/deactivate`, { motivo })), [wrapRequest]);
     
+    // TODO: Endpoint pendiente de implementación en backend
+    const updateEmpleado = useCallback((id, data) => wrapRequest(() => api.put(`/empleados/${id}`, data)), [wrapRequest]);
+    
+    // TODO: Endpoint pendiente de implementación en backend
+    const updateEmpleadoSection = useCallback((id, section, data) => wrapRequest(() => api.put(`/empleados/${id}/${section}`, data)), [wrapRequest]);
+    
     const getCategoriasByEmpresa = useCallback((empresaId) => wrapRequest(() => api.get('/categorias', { params: { id_empresa: empresaId } })), [wrapRequest]);
     
     const getCategoriasSelect = useCallback(() => wrapRequest(() => api.get('/categorias/select')), [wrapRequest]);
@@ -56,6 +62,8 @@ export function useRRHH() {
         error,
         getEmpleados,
         createEmpleadoMultiTable,
+        updateEmpleado,
+        updateEmpleadoSection,
         darDeBajaEmpleado,
         getCategoriasByEmpresa,
         getCategoriasSelect,
@@ -67,5 +75,5 @@ export function useRRHH() {
         getTiposPago,
         getTiposBanco,
         getTiposCuenta
-    }), [loading, error, getEmpleados, createEmpleadoMultiTable, darDeBajaEmpleado, getCategoriasByEmpresa, getCategoriasSelect, getCategoriaById, getPuestosSelect, getAreasByEmpresa, getAreasSelect, getTiposContrato, getTiposPago, getTiposBanco, getTiposCuenta]);
+    }), [loading, error, getEmpleados, createEmpleadoMultiTable, updateEmpleado, updateEmpleadoSection, darDeBajaEmpleado, getCategoriasByEmpresa, getCategoriasSelect, getCategoriaById, getPuestosSelect, getAreasByEmpresa, getAreasSelect, getTiposContrato, getTiposPago, getTiposBanco, getTiposCuenta]);
 }

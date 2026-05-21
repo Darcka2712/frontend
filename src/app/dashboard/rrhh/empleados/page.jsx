@@ -18,6 +18,8 @@ import EmployeeFilters from '@/components/rrhh/empleados/EmployeeFilters';
 import EmployeeTable from '@/components/rrhh/empleados/EmployeeTable';
 import EmployeeWizard from '@/components/rrhh/empleados/EmployeeWizard';
 import EmployeeDetailsModals from '@/components/rrhh/empleados/EmployeeDetailsModals';
+import EmployeeSectionSelector from '@/components/rrhh/empleados/EmployeeSectionSelector';
+import EmployeeSectionEditModal from '@/components/rrhh/empleados/EmployeeSectionEditModal';
 import BajaModal from '@/components/rrhh/empleados/BajaModal';
 
 
@@ -51,7 +53,10 @@ const initialState = {
     isWizardOpen: false,
     activeDetailModal: null,
     isBajaOpen: false,
-    selectedEmpleado: null
+    selectedEmpleado: null,
+    isSectionSelectorOpen: false,
+    isEditModalOpen: false,
+    editSection: null
   }
 };
 
@@ -90,10 +95,10 @@ export default function EmpleadosPage() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { data: empleados, loading, hasFiltersApplied, pagination, filters, catalogs, ui } = state;
   const { empresas, ranchos, categorias, puestos, areas, puestosFiltrados, tiposContrato, tiposPago, tiposBanco, tiposCuenta } = catalogs;
-  const { isWizardOpen, activeDetailModal, isBajaOpen, selectedEmpleado } = ui;
+  const { isWizardOpen, activeDetailModal, isBajaOpen, selectedEmpleado, isSectionSelectorOpen, isEditModalOpen, editSection } = ui;
   const { getEmpresas, getRanchos } = useOrganization();
   const {
-    getEmpleados, createEmpleadoMultiTable, darDeBajaEmpleado,
+    getEmpleados, createEmpleadoMultiTable, updateEmpleadoSection, darDeBajaEmpleado,
     getCategoriasSelect, getCategoriaById, getAreasSelect, getPuestosSelect, getTiposContrato, getTiposPago, getTiposBanco, getTiposCuenta
   } = useRRHH();
 
@@ -302,6 +307,26 @@ export default function EmpleadosPage() {
     }
   };
 
+  const handleEditClick = (emp) => {
+    dispatch({ type: 'SET_UI', payload: { selectedEmpleado: emp, isSectionSelectorOpen: true } });
+  };
+
+  const handleSectionSelect = (section) => {
+    dispatch({ type: 'SET_UI', payload: { isSectionSelectorOpen: false, editSection: section, isEditModalOpen: true } });
+  };
+
+  const handleSectionSave = async (section, data) => {
+    try {
+      // TODO: Endpoint pendiente de implementación en backend
+      // await updateEmpleadoSection(selectedEmpleado.id_empleado, section, data);
+      toast.success(`Sección ${section} actualizada correctamente (endpoint pendiente)`);
+      dispatch({ type: 'SET_UI', payload: { isEditModalOpen: false, editSection: null } });
+      loadData();
+    } catch (error) {
+      toast.error(error.message || `Error al actualizar sección ${section}`);
+    }
+  };
+
   // Helpers Memoized
   const helpers = useMemo(() => ({
     getPuestoNombre: (id) => puestos.find(p => p.id_puesto.toString() === id?.toString())?.nombre_puesto || 'Sin puesto',
@@ -371,7 +396,9 @@ export default function EmpleadosPage() {
         hasFilters={hasFiltersApplied}
         onAction={(action, emp) => {
           dispatch({ type: 'SET_UI', payload: { selectedEmpleado: emp } });
-          if (['personal', 'laboral', 'legal', 'contacto'].includes(action)) {
+          if (action === 'edit') {
+            dispatch({ type: 'SET_UI', payload: { isSectionSelectorOpen: true } });
+          } else if (['personal', 'laboral', 'legal', 'contacto'].includes(action)) {
             dispatch({ type: 'SET_UI', payload: { activeDetailModal: action } });
           } else if (action === 'baja') {
             dispatch({ type: 'SET_UI', payload: { isBajaOpen: true } });
@@ -400,9 +427,35 @@ export default function EmpleadosPage() {
         {activeDetailModal && (
           <EmployeeDetailsModals
             activeDetailModal={activeDetailModal}
-            selectedEmpleado={selectedEmpleado}
+            empleado={selectedEmpleado}
             onClose={() => dispatch({ type: 'SET_UI', payload: { activeDetailModal: null } })}
-            helpers={helpers}
+            onEditSection={(section) => {
+              dispatch({ type: 'SET_UI', payload: { activeDetailModal: null, editSection: section, isEditModalOpen: true } });
+            }}
+          />
+        )}
+
+        {isSectionSelectorOpen && (
+          <EmployeeSectionSelector
+            isOpen={isSectionSelectorOpen}
+            onClose={() => dispatch({ type: 'SET_UI', payload: { isSectionSelectorOpen: false } })}
+            onSelect={handleSectionSelect}
+            empleado={selectedEmpleado}
+          />
+        )}
+
+        {isEditModalOpen && editSection && (
+          <EmployeeSectionEditModal
+            isOpen={isEditModalOpen}
+            section={editSection}
+            empleado={selectedEmpleado}
+            catalogs={{
+              ...catalogs,
+              handleEmpresaChange,
+              handleCategoriaChange
+            }}
+            onSave={handleSectionSave}
+            onClose={() => dispatch({ type: 'SET_UI', payload: { isEditModalOpen: false, editSection: null } })}
           />
         )}
 

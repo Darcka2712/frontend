@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useReducer, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Building, Plus, Search, Filter } from 'lucide-react';
 import { useOrganization } from '@/hooks/useOrganization';
-import { useNotification } from '@/context/NotificationContext';
+import { toast } from 'sonner';
 import AreaTable from '@/components/rrhh/areas/AreaTable';
 import AreaFormModal from '@/components/rrhh/areas/AreaFormModal';
 import AreaDeleteModal from '@/components/rrhh/areas/AreaDeleteModal';
@@ -11,121 +12,178 @@ import InputField from '@/components/ui/InputField';
 import SelectField from '@/components/ui/SelectField';
 import Button from '@/components/ui/Button';
 
+const initialState = {
+  data: [],
+  loading: false,
+  hasFiltersApplied: false,
+  pagination: { page: 1, total: 0, totalPages: 0, hasNext: false },
+  filters: {
+    search: '',
+    estado: 'true'
+  },
+  ui: {
+    modalOpen: false,
+    deleteModalOpen: false,
+    selected: null
+  }
+};
+
+function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_DATA':
+      return {
+        ...state,
+        data: action.payload.data,
+        pagination: action.payload.pagination,
+        hasFiltersApplied: true,
+        loading: false
+      };
+    case 'SET_FILTERS':
+      return { ...state, filters: { ...state.filters, ...action.payload } };
+    case 'CLEAR_FILTERS':
+      return {
+        ...state,
+        filters: initialState.filters,
+        data: [],
+        hasFiltersApplied: false,
+        pagination: initialState.pagination
+      };
+    case 'SET_UI':
+      return { ...state, ui: { ...state.ui, ...action.payload } };
+    default:
+      return state;
+  }
+}
+
 export default function AreasPage() {
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { data: areas, loading, hasFiltersApplied, pagination, filters, ui } = state;
+  const { modalOpen, deleteModalOpen, selected } = ui;
   const { getAreas } = useOrganization();
-  const { addNotification } = useNotification();
-  
-  const [areas, setAreas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [estado, setEstado] = useState('true');
-  const [pagination, setPagination] = useState({ page: 1, total: 0, totalPages: 0, hasNext: false });
-  const [stats, setStats] = useState({ total: 0, activos: 0, inactivos: 0 });
-  const [modalOpen, setModalOpen] = useState(false);
-  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [selected, setSelected] = useState(null);
-  const [error, setError] = useState('');
 
   const fetchAreas = useCallback(async (page = 1) => {
-    setLoading(true);
+    dispatch({ type: 'SET_LOADING', payload: true });
     try {
       const response = await getAreas({
         page,
         limit: 10,
-        buscar: search,
-        activo: estado
+        buscar: filters.search,
+        activo: filters.estado
       });
-      
+
       if (response && response.success) {
-        setAreas(response.data || []);
-        if (response.pagination) {
-          setPagination(response.pagination);
-          if (response.pagination.stats) {
-            setStats(response.pagination.stats);
+        dispatch({
+          type: 'SET_DATA',
+          payload: {
+            data: response.data || [],
+            pagination: response.pagination || initialState.pagination
           }
-        }
+        });
       } else {
-        setAreas([]);
-        setPagination({ page: 1, total: 0, totalPages: 0, hasNext: false });
+        dispatch({
+          type: 'SET_DATA',
+          payload: { data: [], pagination: initialState.pagination }
+        });
       }
     } catch (err) {
       console.error('Error en fetchAreas:', err);
-      setError(err.message);
-      setAreas([]);
-    } finally {
-      setLoading(false);
+      dispatch({
+        type: 'SET_DATA',
+        payload: { data: [], pagination: initialState.pagination }
+      });
     }
-  }, [getAreas, search, estado]);
+  }, [getAreas, filters]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchAreas(1);
     }, 500);
     return () => clearTimeout(timer);
-  }, [search, estado, fetchAreas]);
+  }, [filters.search, filters.estado, fetchAreas]);
 
-  const handlePageChange = (newPage) => {
-    fetchAreas(newPage);
+  const handleFilter = () => {
+    fetchAreas(1);
+  };
+
+  const handleClearFilters = () => {
+    dispatch({ type: 'CLEAR_FILTERS' });
   };
 
   const handleCreate = () => {
-    setSelected(null);
-    setModalOpen(true);
+    dispatch({ type: 'SET_UI', payload: { selected: null, modalOpen: true } });
   };
 
   const handleEdit = (area) => {
-    setSelected(area);
-    setModalOpen(true);
+    dispatch({ type: 'SET_UI', payload: { selected: area, modalOpen: true } });
   };
 
   const handleDelete = (area) => {
-    setSelected(area);
-    setDeleteModalOpen(true);
+    dispatch({ type: 'SET_UI', payload: { selected: area, deleteModalOpen: true } });
+  };
+
+  const handleSaved = () => {
+    toast.success(selected ? 'Área actualizada correctamente' : 'Área creada correctamente');
+    dispatch({ type: 'SET_UI', payload: { modalOpen: false } });
+    fetchAreas();
+  };
+
+  const handleDeleted = () => {
+    toast.success('Área desactivada correctamente');
+    dispatch({ type: 'SET_UI', payload: { deleteModalOpen: false } });
+    fetchAreas();
   };
 
   return (
-    <div className="space-y-10 pb-20 animate-fadeIn">
-      {/* Header Premium */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-[2rem] flex items-center justify-center shadow-2xl shadow-indigo-500/20">
-            <Building className="text-white" size={32} />
+    <div className="max-w-[1600px] mx-auto space-y-12 animate-fadeIn pb-20 px-4 sm:px-6 lg:px-8">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-gradient-to-r from-slate-900/40 to-transparent p-8 rounded-[3rem] border border-white/5 shadow-2xl backdrop-blur-sm">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 text-indigo-400 font-bold tracking-widest text-xs uppercase">
+            <div className="w-8 h-1 bg-indigo-500 rounded-full" />
+            Recursos Humanos
           </div>
-          <div>
-            <h1 className="text-4xl font-semibold text-white tracking-tight">Áreas</h1>
-            <p className="text-slate-500 font-medium mt-1">Estructura organizacional y departamentos</p>
-          </div>
+          <h1 className="text-5xl font-black text-white tracking-tight">
+            Gestión de <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Áreas</span>
+          </h1>
+          <p className="text-slate-400 text-lg max-w-2xl font-medium">
+            Administra la estructura organizacional y departamentos de tu empresa.
+          </p>
         </div>
-        
-        <Button 
-          onClick={handleCreate} 
-          variant="primary" 
-          size="lg" 
+
+        <Button
+          onClick={handleCreate}
+          variant="primary"
+          size="xl"
           icon={Plus}
-          className="shadow-xl shadow-indigo-600/20"
+          className="group relative overflow-hidden shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] hover:shadow-[0_0_50px_-5px_rgba(79,70,229,0.6)] transition-all duration-500 rounded-2xl px-10"
         >
-          NUEVA ÁREA
+          <span className="relative z-10 flex items-center gap-2">
+            Nueva Área
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-600 group-hover:scale-105 transition-transform duration-500" />
         </Button>
       </div>
 
-      {/* Indicadores de Estructura */}
-      <AreaKPIs stats={stats} />
+      {/* KPIs Section */}
+      <AreaKPIs stats={pagination} />
 
-      {/* Buscador y Controles */}
+      {/* Filter Section */}
       <div className="flex flex-col md:flex-row items-center gap-4">
         <div className="flex-1 w-full">
           <InputField
             placeholder="Buscar por nombre o descripción..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            value={filters.search}
+            onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { search: e.target.value } })}
             icon={Search}
             className="text-lg"
           />
         </div>
         <div className="w-full md:w-48">
           <SelectField
-            value={estado}
-            onChange={(e) => setEstado(e.target.value)}
+            value={filters.estado}
+            onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { estado: e.target.value } })}
             icon={Filter}
             options={[
               { value: 'all', label: 'Todos los estados' },
@@ -134,34 +192,46 @@ export default function AreasPage() {
             ]}
           />
         </div>
+        <div className="flex gap-3">
+          <Button onClick={handleFilter} variant="primary" icon={Search}>
+            Buscar
+          </Button>
+          <Button onClick={handleClearFilters} variant="ghost">
+            Limpiar
+          </Button>
+        </div>
       </div>
 
-      {/* Tabla de Resultados */}
-      <AreaTable 
+      {/* Table Section */}
+      <AreaTable
         areas={areas}
+        loading={loading}
         pagination={pagination}
-        onPageChange={handlePageChange}
+        onPageChange={fetchAreas}
         onEdit={handleEdit}
         onDelete={handleDelete}
-        loading={loading}
+        hasFilters={hasFiltersApplied}
       />
 
-      {/* Modales Orquestados */}
-      <AreaFormModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        selected={selected}
-        onSaved={fetchAreas}
-        notify={addNotification}
-      />
-
-      <AreaDeleteModal
-        open={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
-        selected={selected}
-        onDeleted={fetchAreas}
-        notify={addNotification}
-      />
+      {/* Modals */}
+      <AnimatePresence>
+        {modalOpen && (
+          <AreaFormModal
+            open={modalOpen}
+            onClose={() => dispatch({ type: 'SET_UI', payload: { modalOpen: false } })}
+            selected={selected}
+            onSaved={handleSaved}
+          />
+        )}
+        {deleteModalOpen && (
+          <AreaDeleteModal
+            open={deleteModalOpen}
+            onClose={() => dispatch({ type: 'SET_UI', payload: { deleteModalOpen: false } })}
+            selected={selected}
+            onDeleted={handleDeleted}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

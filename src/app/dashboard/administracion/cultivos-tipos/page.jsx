@@ -1,221 +1,286 @@
-// src/app/dashboard/administracion/cultivos-tipos/page.jsx
 'use client';
-import { useState, useEffect } from 'react';
+import { useReducer, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useOrganization } from '@/hooks/useOrganization';
 import { toast } from 'sonner';
+import { Sprout, Search, Plus, Filter } from 'lucide-react';
 
-// Componente para el modal de Frutas
-const FrutaModal = ({ isOpen, onClose, editingTipo, formData, setFormData, onSubmit, loading }) => {
-    if (!isOpen) return null;
+import Button from '@/components/ui/Button';
+import InputField from '@/components/ui/InputField';
+import SelectField from '@/components/ui/SelectField';
+import CultivosTiposKPIs from '@/components/administracion/cultivos-tipos/CultivosTiposKPIs';
+import CultivosTiposTable from '@/components/administracion/cultivos-tipos/CultivosTiposTable';
+import CultivosTiposFormModal from '@/components/administracion/cultivos-tipos/CultivosTiposFormModal';
+import CultivosTiposDeleteModal from '@/components/administracion/cultivos-tipos/CultivosTiposDeleteModal';
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onClick={onClose} onKeyDown={(e) => e.key === 'Enter' && onClose()} role="button" tabIndex={0}></div>
-            <div className="relative w-full max-w-md bg-slate-900 border border-white/10 rounded-[2rem] shadow-2xl overflow-hidden animate-slideUp">
-                <div className="p-8 pb-4">
-                    <h2 className="text-2xl font-black text-white">{editingTipo ? 'Editar Fruta' : 'Nueva Fruta'}</h2>
-                    <p className="text-slate-400 mt-2 font-medium">Define el nombre de la especie.</p>
-                </div>
-                <form onSubmit={onSubmit} className="p-8 pt-4 space-y-6">
-                    <div className="space-y-2">
-                        <label htmlFor="nombre-fruta" className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Nombre de la Fruta</label>
-                        <input
-                            id="nombre-fruta"
-                            type="text"
-                            required
-                            placeholder="Ej: Fresa, Frambuesa, Zarzamora..."
-                            className="w-full bg-slate-950/50 border border-white/10 rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 transition-all placeholder:text-slate-600 font-bold"
-                            value={formData.nombre}
-                            onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
-                        />
-                    </div>
-                    <div className="flex gap-4 pt-4">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="flex-1 px-6 py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-bold transition-all active:scale-95"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="flex-[2] px-6 py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center justify-center"
-                        >
-                            {loading ? (
-                                <svg className="animate-spin size-5 text-white" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            ) : (editingTipo ? 'Guardar Cambios' : 'Registrar Fruta')}
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    );
+const initialState = {
+  data: [],
+  loading: false,
+  hasFiltersApplied: false,
+  pagination: { page: 1, total: 0, totalPages: 0, hasNext: false },
+  filters: {
+    search: '',
+    estado: 'true'
+  },
+  ui: {
+    modalOpen: false,
+    deleteModalOpen: false,
+    selected: null
+  }
 };
 
+function reducer(state, action) {
+  switch (action.type) {
+    case 'SET_LOADING':
+      return { ...state, loading: action.payload };
+    case 'SET_DATA':
+      return {
+        ...state,
+        data: action.payload.data,
+        pagination: action.payload.pagination,
+        hasFiltersApplied: true,
+        loading: false
+      };
+    case 'SET_FILTERS':
+      return { ...state, filters: { ...state.filters, ...action.payload } };
+    case 'CLEAR_FILTERS':
+      return {
+        ...state,
+        filters: initialState.filters,
+        data: [],
+        hasFiltersApplied: false,
+        pagination: initialState.pagination
+      };
+    case 'SET_UI':
+      return { ...state, ui: { ...state.ui, ...action.payload } };
+    default:
+      return state;
+  }
+}
+
 export default function CultivosTiposPage() {
-    const { getCultivosTipo, createCultivoTipo, updateCultivoTipo, deleteCultivoTipo, loading: orgLoading } = useOrganization();
-    const [tipos, setTipos] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingTipo, setEditingTipo] = useState(null);
-    const [formData, setFormData] = useState({ nombre: '' });
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { data: tipos, loading, hasFiltersApplied, pagination, filters, ui } = state;
+  const { modalOpen, deleteModalOpen, selected } = ui;
+  const { getCultivosTipo, createCultivoTipo, updateCultivoTipo, deleteCultivoTipo, loading: orgLoading } = useOrganization();
 
-    useEffect(() => {
-        loadData();
-    }, []);
+  const loadData = useCallback(async (page = 1) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      const queryParams = Object.entries({
+        page,
+        limit: 10,
+        search: filters.search,
+        activo: filters.estado
+      }).reduce((acc, [key, val]) => {
+        if (val !== '' && val !== null && val !== undefined) acc[key] = val;
+        return acc;
+      }, {});
 
-    const loadData = async () => {
-        try {
-            setLoading(true);
-            const data = await getCultivosTipo();
-            setTipos(Array.isArray(data) ? data : []);
-        } catch (error) {
-            toast.error('Error al cargar catálogo de frutas');
-        } finally {
-            setLoading(false);
+      const response = await getCultivosTipo(queryParams);
+      const dataList = response?.data || response || [];
+      const isPaginated = response && response.pagination;
+
+      dispatch({
+        type: 'SET_DATA',
+        payload: {
+          data: Array.isArray(dataList) ? dataList : [],
+          pagination: isPaginated ? response.pagination : {
+            page: 1,
+            total: Array.isArray(dataList) ? dataList.length : 0,
+            totalPages: 1,
+            hasNext: false
+          }
         }
-    };
+      });
+    } catch (err) {
+      console.error('Error loading cultivos tipos:', err);
+      dispatch({
+        type: 'SET_DATA',
+        payload: { data: [], pagination: initialState.pagination }
+      });
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  }, [filters, getCultivosTipo]);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            if (editingTipo) {
-                await updateCultivoTipo(editingTipo.id, formData);
-                toast.success('Fruta actualizada exitosamente');
-            } else {
-                await createCultivoTipo(formData);
-                toast.success('Fruta registrada exitosamente');
-            }
-            setIsModalOpen(false);
-            setEditingTipo(null);
-            setFormData({ nombre: '' });
-            loadData();
-        } catch (error) {
-            toast.error(error.message || 'Error al procesar la solicitud');
-        }
-    };
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
-    const handleDelete = async (id) => {
-        if (!confirm('¿Estás seguro de desactivar esta fruta? Esto podría afectar a las variedades asociadas.')) return;
-        try {
-            await deleteCultivoTipo(id);
-            toast.success('Fruta desactivada');
-            loadData();
-        } catch (error) {
-            toast.error('Error al desactivar fruta');
-        }
-    };
+  const handleFilter = () => loadData(1);
+  const handleClearFilters = () => dispatch({ type: 'CLEAR_FILTERS' });
 
-    const openModal = (tipo = null) => {
-        if (tipo) {
-            setEditingTipo(tipo);
-            setFormData({ nombre: tipo.nombre });
-        } else {
-            setEditingTipo(null);
-            setFormData({ nombre: '' });
-        }
-        setIsModalOpen(true);
-    };
+  const handleCreate = () => {
+    dispatch({ type: 'SET_UI', payload: { selected: null, modalOpen: true } });
+  };
 
-    return (
-        <div className="space-y-8 animate-fadeIn">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-900/40 p-8 rounded-3xl border border-white/5 backdrop-blur-xl shadow-2xl">
-                <div>
-                    <h1 className="text-3xl font-black text-white tracking-tight">Catálogo de Frutas</h1>
-                    <p className="text-slate-400 mt-2 font-medium">Gestiona las especies principales de cultivo para tu organización.</p>
-                </div>
-                <button
-                    onClick={() => openModal()}
-                    className="flex items-center justify-center gap-2 px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 group"
-                >
-                    <svg className="size-5 group-hover:rotate-90 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
-                    </svg>
-                    Añadir Fruta
-                </button>
-            </div>
+  const handleEdit = (item) => {
+    dispatch({ type: 'SET_UI', payload: { selected: item, modalOpen: true } });
+  };
 
-            {/* Content Card */}
-            <div className="bg-slate-900/40 rounded-3xl border border-white/5 backdrop-blur-xl shadow-2xl overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-white/5 bg-white/5">
-                                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">ID</th>
-                                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">Nombre</th>
-                                <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-right whitespace-nowrap">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {loading ? (
-                                Array(3).fill(0).map((_, i) => (
-                                    <tr key={`loading-row-${i}`} className="animate-pulse">
-                                        <td colSpan="3" className="px-8 py-6 h-16 bg-white/5"></td>
-                                    </tr>
-                                ))
-                            ) : tipos.length === 0 ? (
-                                <tr>
-                                    <td colSpan="3" className="px-8 py-12 text-center text-slate-500 font-medium bg-slate-950/20">
-                                        No hay frutas registradas en el catálogo.
-                                    </td>
-                                </tr>
-                            ) : (
-                                tipos.map((tipo) => (
-                                    <tr key={tipo.id} className="hover:bg-white/[0.02] transition-colors group">
-                                        <td className="px-8 py-6 text-slate-200">
-                                            <span className="text-slate-400 font-mono text-xs">#{tipo.id}</span>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-3">
-                                                <div className="size-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-white border border-indigo-500/20 font-black">
-                                                    {tipo.nombre[0].toUpperCase()}
-                                                </div>
-                                                <span className="text-white font-bold">{tipo.nombre}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => openModal(tipo)}
-                                                    className="p-2 text-white hover:text-white hover:bg-indigo-500/20 rounded-lg transition-all border border-transparent hover:border-indigo-500/20"
-                                                >
-                                                    <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(tipo.id)}
-                                                    className="p-2 text-white hover:text-white hover:bg-rose-500/20 rounded-lg transition-all border border-transparent hover:border-rose-500/20"
-                                                >
-                                                    <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+  const handleDelete = (item) => {
+    dispatch({ type: 'SET_UI', payload: { selected: item, deleteModalOpen: true } });
+  };
 
-            {/* Modal */}
-            <FrutaModal 
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                editingTipo={editingTipo}
-                formData={formData}
-                setFormData={setFormData}
-                onSubmit={handleSubmit}
-                loading={orgLoading}
-            />
+  const handleSaved = async (formData) => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      if (selected) {
+        await updateCultivoTipo(selected.id_catalogo, { descripcion: formData.nombre, activo: formData.activo });
+        toast.success('Tipo de cultivo actualizado correctamente');
+      } else {
+        await createCultivoTipo({ descripcion: formData.nombre, clave: 'TIPO_CULTIVO', activo: formData.activo });
+        toast.success('Tipo de cultivo creado correctamente');
+      }
+      dispatch({ type: 'SET_UI', payload: { modalOpen: false } });
+      loadData();
+    } catch (err) {
+      toast.error(err.message || 'Error en la operación');
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  const handleDeleted = async () => {
+    try {
+      dispatch({ type: 'SET_LOADING', payload: true });
+      await deleteCultivoTipo(selected.id_catalogo);
+      toast.success('Tipo de cultivo desactivado correctamente');
+      dispatch({ type: 'SET_UI', payload: { deleteModalOpen: false } });
+      loadData();
+    } catch (err) {
+      toast.error(err.message || 'Error al eliminar');
+    } finally {
+      dispatch({ type: 'SET_LOADING', payload: false });
+    }
+  };
+
+  return (
+    <div className="max-w-[1600px] mx-auto space-y-12 animate-fadeIn pb-20 px-4 sm:px-6 lg:px-8">
+      {/* Premium Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-gradient-to-r from-slate-900/40 to-transparent p-8 rounded-[3rem] border border-white/5 shadow-2xl backdrop-blur-sm">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3 text-indigo-400 font-bold tracking-widest text-xs uppercase">
+            <div className="w-8 h-1 bg-indigo-500 rounded-full" />
+            Administración
+          </div>
+          <h1 className="text-5xl font-black text-white tracking-tight">
+            Catálogo de <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Tipos de Cultivo</span>
+          </h1>
+          <p className="text-slate-400 text-lg max-w-2xl font-medium">
+            Gestiona las especies principales de cultivo para tu organización.
+          </p>
         </div>
-    );
+
+        <Button
+          onClick={handleCreate}
+          variant="primary"
+          size="xl"
+          icon={Plus}
+          className="group relative overflow-hidden shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)] hover:shadow-[0_0_50px_-5px_rgba(79,70,229,0.6)] transition-all duration-500 rounded-2xl px-10"
+        >
+          <span className="relative z-10 flex items-center gap-2">
+            Nuevo Tipo
+          </span>
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-blue-600 group-hover:scale-105 transition-transform duration-500" />
+        </Button>
+      </div>
+
+      {/* KPIs Section */}
+      <CultivosTiposKPIs tipos={tipos} pagination={pagination} />
+
+      {/* Filter Section */}
+      <div className="bg-gradient-to-br from-slate-900/80 via-slate-800/60 to-slate-900/80 backdrop-blur-xl border border-slate-700/30 rounded-[2.5rem] p-8 shadow-2xl shadow-black/20">
+        <div className="flex items-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-indigo-500/20 rounded-2xl flex items-center justify-center border border-indigo-500/30">
+            <Search size={18} className="text-indigo-400" />
+          </div>
+          <div>
+            <h3 className="text-xl font-semibold text-white">Filtros de Búsqueda</h3>
+            <p className="text-slate-400 text-sm">Busca tipos de cultivo por nombre</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <InputField
+              placeholder="Buscar por nombre de especie..."
+              value={filters.search}
+              onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { search: e.target.value } })}
+              icon={Search}
+              className="w-full bg-slate-800/50 border-slate-600/30 rounded-xl"
+            />
+          </div>
+          <div>
+            <SelectField
+              value={filters.estado}
+              onChange={(e) => dispatch({ type: 'SET_FILTERS', payload: { estado: e.target.value } })}
+              icon={Filter}
+              options={[
+                { value: 'true', label: 'Solo Activos' },
+                { value: 'false', label: 'Solo Inactivos' },
+                { value: 'all', label: 'Todos los estados' }
+              ]}
+              className="w-full bg-slate-800/50 border-slate-600/30 rounded-xl"
+            />
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-6 mt-6 border-t border-slate-700/30">
+          <Button
+            onClick={handleFilter}
+            variant="primary"
+            size="lg"
+            icon={Filter}
+            className="flex-1 sm:flex-none shadow-lg shadow-indigo-600/25 hover:shadow-indigo-600/40 transition-all duration-300"
+          >
+            Buscar Tipos
+          </Button>
+          <Button
+            onClick={handleClearFilters}
+            variant="secondary"
+            size="lg"
+            className="flex-1 sm:flex-none bg-slate-700/50 hover:bg-slate-700/70 border-slate-600/30 transition-all duration-300"
+          >
+            Limpiar Todo
+          </Button>
+        </div>
+      </div>
+
+      {/* Table Section */}
+      <CultivosTiposTable
+        tipos={tipos}
+        loading={loading}
+        pagination={pagination}
+        onPageChange={loadData}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        hasFilters={hasFiltersApplied}
+      />
+
+      {/* Modals */}
+      <AnimatePresence>
+        {modalOpen && (
+          <CultivosTiposFormModal
+            open={modalOpen}
+            onClose={() => dispatch({ type: 'SET_UI', payload: { modalOpen: false } })}
+            selected={selected}
+            onSaved={handleSaved}
+            loading={orgLoading}
+          />
+        )}
+        {deleteModalOpen && (
+          <CultivosTiposDeleteModal
+            open={deleteModalOpen}
+            onClose={() => dispatch({ type: 'SET_UI', payload: { deleteModalOpen: false } })}
+            selected={selected}
+            onConfirm={handleDeleted}
+            loading={orgLoading}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }

@@ -46,7 +46,7 @@ const menuItems = [
             { title: 'Centros de Producción', path: '/dashboard/administracion/ranchos' },
             { title: 'Micro-Sectores', path: '/dashboard/administracion/sectores' },
             { title: 'Lotes de Cultivo', path: '/dashboard/administracion/cultivos' },
-            { title: 'Catálogo de Frutas', path: '/dashboard/administracion/cultivos-tipos' },
+            { title: 'Catálogo de Tipos', path: '/dashboard/administracion/cultivos-tipos' },
             { title: 'Catálogo de Variedades', path: '/dashboard/administracion/variedades' }
         ]
     },

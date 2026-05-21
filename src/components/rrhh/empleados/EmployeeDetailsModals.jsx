@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Briefcase, FileText, Phone, ShieldCheck } from 'lucide-react';
+import { X, User, Briefcase, FileText, Phone, ShieldCheck, Pencil } from 'lucide-react';
 
-export default function EmployeeDetailsModals({ activeDetailModal, onClose, empleado }) {
+export default function EmployeeDetailsModals({ activeDetailModal, onClose, empleado, onEditSection }) {
   if (!activeDetailModal || !empleado) return null;
 
   const MODAL_CONFIG = {
@@ -33,7 +33,6 @@ export default function EmployeeDetailsModals({ activeDetailModal, onClose, empl
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           className="relative w-full max-w-lg overflow-hidden rounded-3xl border border-slate-800 bg-slate-900 shadow-2xl shadow-black/50"
         >
-          {/* Header */}
           <div className="flex items-center justify-between border-b border-slate-800 p-6">
             <div className="flex items-center gap-3">
                <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.bgClass}`}>
@@ -41,15 +40,28 @@ export default function EmployeeDetailsModals({ activeDetailModal, onClose, empl
               </div>
               <h3 className="text-lg font-semibold text-slate-100">{config.title}</h3>
             </div>
-            <button
-              onClick={onClose}
-              className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              {onEditSection && (
+                <button
+                  onClick={() => {
+                    const sectionMap = { personal: 'personal', laboral: 'laboral', legal: 'fiscal', contacto: 'emergencia' };
+                    onEditSection(sectionMap[activeDetailModal]);
+                  }}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-amber-400 transition-colors"
+                  title="Editar esta sección"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
-          {/* Body */}
           <div className="p-8 space-y-6">
             <div className="flex flex-col items-center gap-4 border-b border-slate-800 pb-6">
                <div className="h-20 w-20 rounded-2xl bg-slate-800 flex items-center justify-center text-3xl font-bold text-slate-500 border border-slate-700 shadow-inner">
@@ -62,15 +74,13 @@ export default function EmployeeDetailsModals({ activeDetailModal, onClose, empl
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {activeModal === 'personal' && (
+              {activeDetailModal === 'personal' && (
                 <>
-                  <DetailItem label="Género" value={empleado.genero === 'M' ? 'Masculino' : 'Femenino'} />
-                  <DetailItem label="Nacimiento" value={new Date(empleado.fecha_nacimiento).toLocaleDateString()} />
-                  <DetailItem label="Antigüedad" value="2 años" />
-                  <DetailItem label="Edad" value="28 años" />
+                  <DetailItem label="Género" value={empleado.genero === 'M' ? 'Masculino' : empleado.genero === 'F' ? 'Femenino' : 'Otro'} />
+                  <DetailItem label="Nacimiento" value={empleado.fecha_nacimiento ? new Date(empleado.fecha_nacimiento).toLocaleDateString() : 'N/A'} />
                 </>
               )}
-              {activeModal === 'laboral' && (
+              {activeDetailModal === 'laboral' && (
                 <>
                   <DetailItem label="Puesto" value={empleado.puesto?.nombre_puesto} />
                   <DetailItem label="Categoría" value={empleado.categoria?.nombre_categoria} />
@@ -78,20 +88,18 @@ export default function EmployeeDetailsModals({ activeDetailModal, onClose, empl
                   <DetailItem label="Ubicación" value={empleado.categoria?.es_campo ? empleado.rancho?.nombre_rancho : empleado.area?.nombre} />
                 </>
               )}
-              {activeModal === 'legal' && (
+              {activeDetailModal === 'legal' && (
                 <>
-                  <DetailItem label="RFC" value="HASHEADO" />
-                  <DetailItem label="CURP" value="HASHEADO" />
-                  <DetailItem label="NSS" value="HASHEADO" />
-                  <DetailItem label="Contrato" value="Indefinido" />
+                  <DetailItem label="RFC" value={empleado.rfc || 'N/A'} />
+                  <DetailItem label="CURP" value={empleado.curp || 'N/A'} />
+                  <DetailItem label="NSS" value={empleado.nss || 'N/A'} />
                 </>
               )}
-              {activeModal === 'contacto' && (
+              {activeDetailModal === 'contacto' && (
                 <>
-                  <DetailItem label="Contacto" value="Maria Lopez" />
-                  <DetailItem label="Relación" value="Esposa" />
-                  <DetailItem label="Teléfono" value="+52 123 456 7890" />
-                  <DetailItem label="Estatus" value="Validado" />
+                  <DetailItem label="Contacto" value={empleado.nombre_contacto || 'N/A'} />
+                  <DetailItem label="Relación" value={empleado.relacion || 'N/A'} />
+                  <DetailItem label="Teléfono" value={empleado.telefono_contacto || 'N/A'} />
                 </>
               )}
             </div>

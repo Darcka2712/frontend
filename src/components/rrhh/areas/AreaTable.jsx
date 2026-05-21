@@ -1,56 +1,133 @@
 'use client';
 
 import React from 'react';
-import { Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Edit2, Trash2, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 
-const AreaTable = ({ areas = [], pagination, loading, onEdit, onDelete, onPageChange }) => {
+const AreaTable = ({ areas = [], pagination, loading, onEdit, onDelete, onPageChange, hasFilters = false }) => {
+  const { totalPages = 1, page: currentPage = 1 } = pagination || {};
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-4">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-20 w-full animate-pulse rounded-2xl bg-slate-800/40 border border-slate-800" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!areas || areas.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-800 bg-slate-900/40 p-20 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-slate-800/50 text-slate-500">
+          <Search className="h-8 w-8" />
+        </div>
+        <h3 className="mt-4 text-lg font-medium text-slate-200">
+          {hasFilters ? 'No se encontraron áreas' : 'Busca áreas para comenzar'}
+        </h3>
+        <p className="mt-2 text-sm text-slate-500">
+          {hasFilters ? 'Intenta ajustar los filtros de búsqueda.' : 'Configura los filtros y presiona "Buscar".'}
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-white/5 bg-slate-900/20 backdrop-blur-md">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-white/5 text-slate-400 text-[10px] font-black uppercase tracking-widest">
-            <th className="px-6 py-5">Nombre</th>
-            <th className="px-6 py-5">Descripción</th>
-            <th className="px-6 py-5 text-center">Estado</th>
-            <th className="px-6 py-5 text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/5">
-          {loading && areas.length === 0 ? (
-            <tr><td colSpan="4" className="px-6 py-16 text-center text-slate-500 italic font-medium">Cargando áreas...</td></tr>
-          ) : areas.length === 0 ? (
-            <tr><td colSpan="4" className="px-6 py-16 text-center text-slate-500 italic font-medium">No se encontraron áreas</td></tr>
-          ) : (
-            areas.map((a) => (
-              <tr key={a.id_area || a.id} className="hover:bg-white/[0.02] transition-colors group">
-                <td className="px-6 py-5"><span className="text-sm font-bold text-white">{a.nombre_area || a.nombre}</span></td>
-                <td className="px-6 py-5"><p className="text-xs text-slate-500 max-w-xs truncate">{a.descripcion || '-'}</p></td>
-                <td className="px-6 py-5 text-center">
-                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${a.activo !== false ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${a.activo !== false ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                    {a.activo !== false ? 'Activa' : 'Inactiva'}
-                  </span>
-                </td>
-                <td className="px-6 py-5 text-right">
-                  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => onEdit(a)} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-indigo-400 transition-colors"><Edit2 size={16} /></button>
-                    <button onClick={() => onDelete(a)} className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                  </div>
-                </td>
+    <div className="space-y-4">
+      <div className="overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/40 backdrop-blur-xl">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-left">
+            <thead>
+              <tr className="border-b border-slate-800/50 bg-slate-900/50">
+                <th className="p-5 text-xs font-semibold uppercase tracking-wider text-slate-500">Nombre</th>
+                <th className="p-5 text-xs font-semibold uppercase tracking-wider text-slate-500">Descripción</th>
+                <th className="p-5 text-xs font-semibold uppercase tracking-wider text-slate-500 text-center">Estado</th>
+                <th className="p-5 text-xs font-semibold uppercase tracking-wider text-slate-500 text-right">Acciones</th>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between px-6 py-4 border-t border-white/5 bg-slate-950/20">
-          <span className="text-xs text-slate-500 font-medium">Página {pagination.page} de {pagination.totalPages}</span>
-          <div className="flex gap-2">
-            <button onClick={() => onPageChange(pagination.page - 1)} disabled={pagination.page <= 1} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white disabled:opacity-30 transition-all"><ChevronLeft size={16} /></button>
-            <button onClick={() => onPageChange(pagination.page + 1)} disabled={!pagination.hasNext} className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white disabled:opacity-30 transition-all"><ChevronRight size={16} /></button>
+            </thead>
+            <tbody className="divide-y divide-slate-800/50">
+              {areas.map((a) => (
+                <tr key={a.id_area || a.id} className="group hover:bg-slate-800/30 transition-colors">
+                  <td className="p-5">
+                    <span className="text-sm font-bold text-slate-100">{a.nombre_area || a.nombre}</span>
+                  </td>
+                  <td className="p-5">
+                    <p className="text-xs text-slate-500 max-w-xs truncate">{a.descripcion || '-'}</p>
+                  </td>
+                  <td className="p-5">
+                    <div className="flex justify-center">
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider border ${
+                        a.activo !== false
+                          ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                          : 'bg-red-500/10 text-red-500 border-red-500/20'
+                      }`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${a.activo !== false ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        {a.activo !== false ? 'Activa' : 'Inactiva'}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="p-5">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onEdit(a)}
+                        className="rounded-xl border border-slate-700 bg-slate-800/50 p-2 text-slate-400 hover:border-indigo-500/50 hover:bg-indigo-500/10 hover:text-indigo-400 transition-all"
+                      >
+                        <Edit2 size={16} />
+                      </button>
+                      <button
+                        onClick={() => onDelete(a)}
+                        className="rounded-xl border border-slate-700 bg-slate-800/50 p-2 text-slate-400 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/50 p-6">
+          <p className="text-xs text-slate-500 font-medium">
+            Mostrando <span className="text-slate-300">{areas.length}</span> de <span className="text-slate-300">{pagination?.total || 0}</span> áreas
+          </p>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => onPageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-700 hover:text-slate-100 disabled:opacity-30 transition-all"
+            >
+              <ChevronLeft className="h-4 w-4" /> Anterior
+            </button>
+
+            <div className="flex items-center gap-1 mx-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i}
+                  onClick={() => onPageChange(i + 1)}
+                  className={`h-8 w-8 rounded-lg text-xs font-bold transition-all ${
+                    currentPage === i + 1
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20 scale-110'
+                      : 'text-slate-500 hover:bg-slate-800 hover:text-slate-300'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => onPageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className="flex items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/50 px-3 py-1.5 text-xs font-semibold text-slate-400 hover:bg-slate-700 hover:text-slate-100 disabled:opacity-30 transition-all"
+            >
+              Siguiente <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
